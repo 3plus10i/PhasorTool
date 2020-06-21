@@ -1,4 +1,12 @@
-% 2019-11-4
+% 2020年6月20日
+%   全面支持基本矩阵运算，以后可以应用相量矩阵进行运算了
+%   增加pm方法（phasor matrix），矩阵处理更灵活了
+%   取消对外部isphasor.m的依赖，提高了可移植性
+%   增加了platex方法，可输出相量的latex表达式，方便编辑文档
+%   增加了常用platex方法dispv和dispi，方便使用
+%   集成时域形式的latex表达式方法sine()，提高了可移植性
+%   优化了方法sine()，提高了效率
+%   方法sine()支持相量矩阵
 classdef phasor
     properties
         m % magnitude
@@ -20,7 +28,8 @@ classdef phasor
                 c = 0+1j*0;
             elseif nargin == 1
                 if isphasor(m)
-                    c = m;
+                    self = m;
+                    return
                 elseif isnumeric(m) % most convenient way
                     c = m;
                 elseif iscell(m) % who would use this strange initial value?
@@ -50,19 +59,26 @@ classdef phasor
                 fprintf('\n');
             end
         end
-    end
+        
+    end % of methods
     
-    %% basic series
+    %% basic series - basic tools
     methods
+        
+        function flag = isphasor(p1)
+            flag = strcmpi(class(p1),'phasor');
+        end
+        
         function self = c2p(self,c)
             % f(c) -> m,a,x,y
             if nargin==1 || isempty(c)
-                % use p = p.c2p() to update phasor from c.
-                % self.c should be indevidul values, but this expression is
-                % compatible with matrix self.c (though it's wrong format)
+                % use p = p.c2p() to UPDATE phasor from c.
+                % so that m/a/x/y could be cooresponding value.
                 c = reshape([self.c],size(self));
             end
             if isphasor(c)
+                % use p = p.c2p(c) to BUILD a new phasor p from c.
+                % size(p) == size(c)
                 c = reshape([c.c],size(c));
             end
             for ii = 1:size(c,1)
@@ -92,95 +108,272 @@ classdef phasor
             end
         end
         
-        % basic calculation
-        
-        % TODO pahsor matrix compatibility
-        function pr = plus(p1,p2)
-            % +
-            p1 = phasor(p1);
-            p2 = phasor(p2);
-            pr = phasor(p1.c+p2.c);
+        function pm_self = pm(self)
+            % matrice = phasor.pm
+            % extract complex matrice from phasor matrice
+            pm_self = reshape([self.c],size(self));
         end
         
+    end % of methods
+        
+    %% basic series - basic calculation
+    methods
+        
+        function pr = plus(p1,p2)
+            % +
+            if isphasor(p1),p1 = p1.pm;end
+            if isphasor(p2),p2 = p2.pm;end
+            pr = phasor(p1+p2);
+        end
+ 
         function pr = minus(p1,p2)
             % -
-            p1 = phasor(p1);
-            p2 = phasor(p2);
-            pr = phasor(p1.c-p2.c);
+            if isphasor(p1),p1 = p1.pm;end
+            if isphasor(p2),p2 = p2.pm;end
+            pr = phasor(p1-p2);
+        end
+        
+        function pr = uminus(p)
+            % - 
+            pr = phasor(-p.pm);
         end
         
         function pr = times(p1,p2)
             % .*
-            p1 = phasor(p1);
-            p2 = phasor(p2);
-            pr = phasor(p1.c.*p2.c);
+            if isphasor(p1),p1 = p1.pm;end
+            if isphasor(p2),p2 = p2.pm;end
+            pr = phasor(p1.*p2);
         end
         
-        function pr = mtimes(p1,p2) % TODO pahsor matrix compatibility
-            p1 = phasor(p1);
-            p2 = phasor(p2);
-            pr = phasor(p1.c.*p2.c);
+        function pr = mtimes(p1,p2)
+            % *
+            if isphasor(p1),p1 = p1.pm;end
+            if isphasor(p2),p2 = p2.pm;end
+            pr = phasor(p1*p2);
         end
         
         function pr = rdivide(p1,p2)
             % ./
-            p1 = phasor(p1);
-            p2 = phasor(p2);
-            pr = phasor(p1.c./p2.c);
+            if isphasor(p1),p1 = p1.pm;end
+            if isphasor(p2),p2 = p2.pm;end
+            pr = phasor(p1./p2);
         end
         
-        function pr = mrdivide(p1,p2) % TODO pahsor matrix compatibility (?
+        function pr = mrdivide(p1,p2)
             % /
-            p1 = phasor(p1);
-            p2 = phasor(p2);
-            pr = phasor(p1.c/p2.c);
+            if isphasor(p1),p1 = p1.pm;end
+            if isphasor(p2),p2 = p2.pm;end
+            pr = phasor(p1/p2);
+        end
+        
+        function pr = mldivide(p1,p2)
+            % \
+            if isphasor(p1),p1 = p1.pm;end
+            if isphasor(p2),p2 = p2.pm;end
+            pr = phasor(p1\p2);
+        end
+        
+        function pr = ldivide(p1,p2)
+            % .\
+            if isphasor(p1),p1 = p1.pm;end
+            if isphasor(p2),p2 = p2.pm;end
+            pr = phasor(p1.\p2);
         end
         
         function pr = ctranspose(p)
-            % ' conjuction
-            pr = phasor(reshape([p.c]',size(p)));
+            % ' ctranspose 复共轭转置
+            % 注意！复共轭转置在相量中很少用！
+            pr = phasor(p.pm');
         end
         
+        function pr = transpose(p)
+            %.' 转置
+            pr = phasor(p.pm.');
+        end
         
+        function pr = conj(p)
+            pr = phasor(conj(p.pm));
+        end
         
-        
-        
-        
-        
-    end
+    end % of methods
     
+    %% special series
     methods
         % special calculation
-        % 优先级太低，在不使用括号指定的情况下进行混合运算会出错。暂时没有好的解决办法
+        % 优先级太低，在不使用括号指定的情况下进行混合运算极容易出错。
+        % 考虑新定义运算符号。
 %         function pr = or(p1,p2)
 %             % parallel: p1|p2
-%             p1 = phasor(p1);
-%             p2 = phasor(p2);
-%             pr = phasor( 1./(1./p1.c+1./p2.c) );
+%             if isphasor(p1),p1 = p1.pm;end
+%             if isphasor(p2),p2 = p2.pm;end
+%             pr = phasor( 1./(1./p1+1./p2) );
 %         end
         function pr = sh(p1,p2)
-            % parallel: sh(p1,p2)
-            p1 = phasor(p1);
-            p2 = phasor(p2);
-            pr = phasor( 1./(1./p1.c+1./p2.c) );
+            % shunt: sh(p1,p2)
+            if isphasor(p1),p1 = p1.pm;end
+            if isphasor(p2),p2 = p2.pm;end
+            pr = phasor( 1./(1./p1+1./p2) );
         end
         
-    end
+        % 输出相量的latex表达
+        function latex_str = platex(self,u)
+            % 考虑到单位和可能的及早求值机制，还是作为方法。
+            if nargin == 2
+                % 矩阵兼容性：p可以为矩阵，但u只能为一个字符。
+                %   不支持为矩阵形p中不同元素指定不同单位
+                u = ['\;{\rm{',u,'}}'];
+            else
+                u = '';
+            end
+            if numel(self) == 1
+                latex_str = [num2str(round(self.m,2)),...
+                    '\angle',num2str(round(self.a,2)),'\circ',u ];
+            else
+                latex_str = cell(size(self));
+                for idx = 1:numel(self)
+                    latex_str{idx} = [num2str(round(self(idx).m,2)),...
+                        '\angle',num2str(round(self(idx).a,2)),'\circ',u ];
+                end
+            end
+        end
+        
+        % 为方便使用platex，集成两个常用形式
+        % 对相量矩阵，v(:).dispv; 是个有用的表达
+        function e = dispv(self)
+            e = platex(self,'V');
+            disp(platex(self,'V'));
+        end
+        function e = dispi(self)
+            e = platex(self,'A');
+            disp(platex(self,'A'));
+        end
+        
+        % 根据(有效值)相量输出正弦表达式，可选是否latex格式
+        % 注意！需要特别小心要处理的对象是否是有效值相量！
+        function e = sine(self,w,unit,islatex)
+            % p.sinu(314,'V')
+            % w double 频率（缺省为1）,size(w)==size(self)
+            % u char 单位（缺省为空）
+            % islatex ture/latex 使输出latex表达式（缺省为false）
+            if nargin==4
+                % 矩阵兼容性：islatex可以为矩阵，但只要触发真值条件即全为真
+                %   不支持为矩阵形p中不同元素指定各自是否输出latex表达式
+                % 矩阵兼容性：p可以为矩阵，但u只能为一个字符。
+                %   不支持为矩阵形p中不同元素指定不同单位
+                islatex = any(islatex) || strcmpi(islatex,'latex');
+            elseif nargin==3
+                if strcmpi(unit,'latex') % 判断含有self和islatex
+                    islatex = true;
+                    if ischar(w) % 判断含有unit，w被省略
+                        unit=w;
+                        w=1;
+                    else % 判断含有w，unit被省略
+                        unit='';
+                    end
+                else % 判断含有self和w和unit
+                    islatex = false;
+                end
+            elseif nargin==2
+                if strcmpi(unit,'latex') % 判断只含有self和islatex
+                    islatex = true;
+                    unit='';
+                    w=1;
+                elseif ischar(w) % 判断含有unit，w和islatex被省略
+                    unit=w;
+                    w=1;
+                    islatex = false;
+                else % 判断含有w,unit和islatex被省略
+                    unit='';
+                    islatex = false;
+                end
+            elseif nargin==1
+                w=1;
+                unit='';
+                islatex = false;
+            end
+            
+            % A cos( w t + phi ) u
+            % - ---- - - - --- ---
+            if ~islatex
+                cos_parenthesis = 'cos(';
+                unit = [') ',unit];%标量
+            else
+                cos_parenthesis = '\cos\left(';
+                if ~isempty(unit)
+                    % MathType会自动为\circ添加上标记号
+                    unit = ['\circ \right) \;{\rm{',unit,'}}'];
+                else
+                    unit = ['\circ \right)'];%#ok
+                end
+            end
+            if numel(self)==1
+                A = num2str(round(self.m*sqrt(2),2));
+                if w==1
+                    w='';% 频率为1不用显示
+                else
+                    w = num2str(w);
+                end
+                angle_char = num2str(round(self.ad,2));
+                if self.a>=0
+                    t_and_sign = 't+';
+                else
+                    t_and_sign = 't';
+                end
+                e = [A,cos_parenthesis,w,t_and_sign,angle_char,unit];
+                
+            else % 对于输入为相量矩阵的情况
+                % 将数值矩阵转化为字符细胞数组
+                arrnum2str = @(x)arrayfun(@num2str,x,'UniformOutput',false);
+                A = arrnum2str(round(abs(self.pm)*sqrt(2),2));%细胞
+                if w==1
+                    w={''};% 频率为1不用显示
+                elseif numel(w)==1
+                    w={num2str(w)};
+                elseif numel(w)<numel(self)
+                    error('频率与相量数目不匹配！')
+                else
+                    w = arrnum2str(w);
+                end
+                angle_char = arrnum2str(round(self.ad,2));%细胞
+                
+                e = cell(size(self));
+                for idx = 1:numel(self)
+                    if self(idx).a>=0
+                        t_and_sign = 't+';
+                    else
+                        t_and_sign = 't';
+                    end
+                    e{idx} = [A{idx},cos_parenthesis,...
+                        w{min(idx,length(w))},...
+                        t_and_sign,angle_char{idx},unit];
+                end
+            end
+        end
+        
+        % 兼容早期版本
+        function e = sinu(self,w,u,islatex)
+            e = sine(self,w,u,islatex);
+        end
+        
+%         % 这种函数没必要重载了
+%         function pr = real(p)
+%             pr = real(p.pm);
+%         end
+        
+        
+    end % of methods
     
     %% angle stuff
     methods
         function a_rad = ar(self)
         % return angle in rad
-            a_rad = self.a/180*pi;
+            a_rad = angle(self.pm);
         end
         
         function a_deg = ad(self)
         % return angle in deg (=p.a)
-            a_deg = self.a;
+            a_deg = reshape([self.a],size(self));
         end
     end % of methods
     
 end % of class
-
-
-
