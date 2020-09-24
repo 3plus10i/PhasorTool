@@ -7,7 +7,16 @@
 %   集成时域形式的latex表达式方法sine()，提高了可移植性
 %   优化了方法sine()，提高了效率
 %   方法sine()支持相量矩阵
-classdef phasor
+
+% 2020年9月24日
+%	为乘法计算增加计算功率时的共轭提示
+%	为sine()方法增加有效值提示
+%	为创建相量方法增加确认相位提示
+%   真的避免了对外部isphasor.m的依赖，提高了可移植性
+%   增加了slatex()方法，可以省去用sine()时的最后一个参数
+
+
+classdef Phasor
     properties
         m % magnitude
         a % angle degree
@@ -27,7 +36,7 @@ classdef phasor
             if nargin == 0
                 c = 0+1j*0;
             elseif nargin == 1
-                if isphasor(m)
+                if Phasor.isphasor(m)
                     self = m;
                     return
                 elseif isnumeric(m) % most convenient way
@@ -42,6 +51,7 @@ classdef phasor
             else
                 % compatible with matrix
                 if imag(a) == 0
+					warning('请注意确认所创建相量的时域相位和函数名(cos/sin)')
                     c = m.*exp(1j*a*pi/180);
                 else  % x+y
                     c = m+a;
@@ -63,11 +73,13 @@ classdef phasor
     end % of methods
     
     %% basic series - basic tools
-    methods
-        
+    methods(Static)
         function flag = isphasor(p1)
             flag = strcmpi(class(p1),'phasor');
         end
+    end
+    
+    methods
         
         function self = c2p(self,c)
             % f(c) -> m,a,x,y
@@ -76,7 +88,7 @@ classdef phasor
                 % so that m/a/x/y could be cooresponding value.
                 c = reshape([self.c],size(self));
             end
-            if isphasor(c)
+            if Phasor.isphasor(c)
                 % use p = p.c2p(c) to BUILD a new phasor p from c.
                 % size(p) == size(c)
                 c = reshape([c.c],size(c));
@@ -96,12 +108,12 @@ classdef phasor
             % Logical index of phasors in array
             if isnumeric(vars)
                 idx = false(size(vars));
-            elseif isphasor(vars)
+            elseif Phasor.isphasor(vars)
                 idx = true(size(vars));
             elseif iscell(vars)
                 idx = false(size(vars));
                 for ii=1:numel(vars)
-                    if isphasor(vars{ii})
+                    if Phasor.isphasor(vars{ii})
                         idx(ii)=1;
                     end
                 end
@@ -121,15 +133,15 @@ classdef phasor
         
         function pr = plus(p1,p2)
             % +
-            if isphasor(p1),p1 = p1.pm;end
-            if isphasor(p2),p2 = p2.pm;end
+            if Phasor.isphasor(p1),p1 = p1.pm;end
+            if Phasor.isphasor(p2),p2 = p2.pm;end
             pr = phasor(p1+p2);
         end
  
         function pr = minus(p1,p2)
             % -
-            if isphasor(p1),p1 = p1.pm;end
-            if isphasor(p2),p2 = p2.pm;end
+            if Phasor.isphasor(p1),p1 = p1.pm;end
+            if Phasor.isphasor(p2),p2 = p2.pm;end
             pr = phasor(p1-p2);
         end
         
@@ -140,49 +152,51 @@ classdef phasor
         
         function pr = times(p1,p2)
             % .*
-            if isphasor(p1),p1 = p1.pm;end
-            if isphasor(p2),p2 = p2.pm;end
+			warning('如果您在计算功率，请确保电流已共轭')
+            if Phasor.isphasor(p1),p1 = p1.pm;end
+            if Phasor.isphasor(p2),p2 = p2.pm;end
             pr = phasor(p1.*p2);
         end
         
         function pr = mtimes(p1,p2)
             % *
-            if isphasor(p1),p1 = p1.pm;end
-            if isphasor(p2),p2 = p2.pm;end
+			warning('如果您在计算功率，请确保电流已共轭')
+            if Phasor.isphasor(p1),p1 = p1.pm;end
+            if Phasor.isphasor(p2),p2 = p2.pm;end
             pr = phasor(p1*p2);
         end
         
         function pr = rdivide(p1,p2)
             % ./
-            if isphasor(p1),p1 = p1.pm;end
-            if isphasor(p2),p2 = p2.pm;end
+            if Phasor.isphasor(p1),p1 = p1.pm;end
+            if Phasor.isphasor(p2),p2 = p2.pm;end
             pr = phasor(p1./p2);
         end
         
         function pr = mrdivide(p1,p2)
             % /
-            if isphasor(p1),p1 = p1.pm;end
-            if isphasor(p2),p2 = p2.pm;end
+            if Phasor.isphasor(p1),p1 = p1.pm;end
+            if Phasor.isphasor(p2),p2 = p2.pm;end
             pr = phasor(p1/p2);
         end
         
         function pr = mldivide(p1,p2)
             % \
-            if isphasor(p1),p1 = p1.pm;end
-            if isphasor(p2),p2 = p2.pm;end
+            if Phasor.isphasor(p1),p1 = p1.pm;end
+            if Phasor.isphasor(p2),p2 = p2.pm;end
             pr = phasor(p1\p2);
         end
         
         function pr = ldivide(p1,p2)
             % .\
-            if isphasor(p1),p1 = p1.pm;end
-            if isphasor(p2),p2 = p2.pm;end
+            if Phasor.isphasor(p1),p1 = p1.pm;end
+            if Phasor.isphasor(p2),p2 = p2.pm;end
             pr = phasor(p1.\p2);
         end
         
         function pr = ctranspose(p)
             % ' ctranspose 复共轭转置
-            % 注意！复共轭转置在相量中很少用！
+            % 在计算功率时，如果p.pm是标量，可以用这个运算对电流相量共轭
             pr = phasor(p.pm');
         end
         
@@ -204,14 +218,14 @@ classdef phasor
         % 考虑新定义运算符号。
 %         function pr = or(p1,p2)
 %             % parallel: p1|p2
-%             if isphasor(p1),p1 = p1.pm;end
-%             if isphasor(p2),p2 = p2.pm;end
+%             if Phasor.isphasor(p1),p1 = p1.pm;end
+%             if Phasor.isphasor(p2),p2 = p2.pm;end
 %             pr = phasor( 1./(1./p1+1./p2) );
 %         end
         function pr = sh(p1,p2)
             % shunt: sh(p1,p2)
-            if isphasor(p1),p1 = p1.pm;end
-            if isphasor(p2),p2 = p2.pm;end
+            if Phasor.isphasor(p1),p1 = p1.pm;end
+            if Phasor.isphasor(p2),p2 = p2.pm;end
             pr = phasor( 1./(1./p1+1./p2) );
         end
         
@@ -251,7 +265,8 @@ classdef phasor
         % 根据(有效值)相量输出正弦表达式，可选是否latex格式
         % 注意！需要特别小心要处理的对象是否是有效值相量！
         function e = sine(self,w,unit,islatex)
-            % p.sinu(314,'V')
+			warning('请注意确认要处理的对象是否是效值相量')
+            % p.sine(314,'V')
             % w double 频率（缺省为1）,size(w)==size(self)
             % u char 单位（缺省为空）
             % islatex ture/latex 使输出latex表达式（缺省为false）
@@ -274,7 +289,7 @@ classdef phasor
                     islatex = false;
                 end
             elseif nargin==2
-                if strcmpi(unit,'latex') % 判断只含有self和islatex
+                if strcmpi(w,'latex') % 判断只含有self和islatex
                     islatex = true;
                     unit='';
                     w=1;
@@ -301,7 +316,7 @@ classdef phasor
                 cos_parenthesis = '\cos\left(';
                 if ~isempty(unit)
                     % MathType会自动为\circ添加上标记号
-                    unit = ['\circ \right) \;{\rm{',unit,'}}'];
+                    unit = ['\circ \right)\; {\rm{',unit,'}}'];
                 else
                     unit = ['\circ \right)'];%#ok
                 end
@@ -350,6 +365,23 @@ classdef phasor
             end
         end
         
+        % 如果执意要用latex格式，可以直接用这个函数
+        function e = slatex(self,w,unit)
+            if nargin==2
+                if ischar(w) % 判断含有unit，w被省略
+                    unit=w;
+                    w=1;
+                else % 判断含有w,unit被省略
+                    unit='';
+                end
+            elseif nargin==1
+                w=1;
+                unit='';
+            end
+            
+            e = sine(self,w,unit,'latex');
+        end
+        
         % 兼容早期版本
         function e = sinu(self,w,u,islatex)
             e = sine(self,w,u,islatex);
@@ -377,3 +409,4 @@ classdef phasor
     end % of methods
     
 end % of class
+
