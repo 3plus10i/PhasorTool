@@ -138,6 +138,10 @@ sine方法兼容 _phasor_ 矩阵（大概
 
 在有‘latex’参数的sine方法中，频率w和单位unit各自都可以省略。频率w的默认值为1，单位unit的默认值为空字符。
 
+slatex方法等效于将最后一个参数（islatex参数）确定为True的sine方法，这方便了使用。例如，上述命令可以等价地写为
+
+` sine_latex_p1 = p1.slatex(314,'A') `
+
 sine方法兼容 _phasor_ 矩阵（大概
 
 
