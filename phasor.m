@@ -16,7 +16,7 @@
 %   增加了slatex()方法，可以省去用sine()时的最后一个参数
 
 
-classdef Phasor
+classdef phasor
     properties
         m % magnitude
         a % angle degree
@@ -36,7 +36,7 @@ classdef Phasor
             if nargin == 0
                 c = 0+1j*0;
             elseif nargin == 1
-                if Phasor.isphasor(m)
+                if phasor.isphasor(m)
                     self = m;
                     return
                 elseif isnumeric(m) % most convenient way
@@ -88,7 +88,7 @@ classdef Phasor
                 % so that m/a/x/y could be cooresponding value.
                 c = reshape([self.c],size(self));
             end
-            if Phasor.isphasor(c)
+            if phasor.isphasor(c)
                 % use p = p.c2p(c) to BUILD a new phasor p from c.
                 % size(p) == size(c)
                 c = reshape([c.c],size(c));
@@ -108,12 +108,12 @@ classdef Phasor
             % Logical index of phasors in array
             if isnumeric(vars)
                 idx = false(size(vars));
-            elseif Phasor.isphasor(vars)
+            elseif phasor.isphasor(vars)
                 idx = true(size(vars));
             elseif iscell(vars)
                 idx = false(size(vars));
                 for ii=1:numel(vars)
-                    if Phasor.isphasor(vars{ii})
+                    if phasor.isphasor(vars{ii})
                         idx(ii)=1;
                     end
                 end
@@ -133,15 +133,15 @@ classdef Phasor
         
         function pr = plus(p1,p2)
             % +
-            if Phasor.isphasor(p1),p1 = p1.pm;end
-            if Phasor.isphasor(p2),p2 = p2.pm;end
+            if phasor.isphasor(p1),p1 = p1.pm;end
+            if phasor.isphasor(p2),p2 = p2.pm;end
             pr = phasor(p1+p2);
         end
  
         function pr = minus(p1,p2)
             % -
-            if Phasor.isphasor(p1),p1 = p1.pm;end
-            if Phasor.isphasor(p2),p2 = p2.pm;end
+            if phasor.isphasor(p1),p1 = p1.pm;end
+            if phasor.isphasor(p2),p2 = p2.pm;end
             pr = phasor(p1-p2);
         end
         
@@ -153,44 +153,44 @@ classdef Phasor
         function pr = times(p1,p2)
             % .*
 			warning('如果您在计算功率，请确保电流已共轭')
-            if Phasor.isphasor(p1),p1 = p1.pm;end
-            if Phasor.isphasor(p2),p2 = p2.pm;end
+            if phasor.isphasor(p1),p1 = p1.pm;end
+            if phasor.isphasor(p2),p2 = p2.pm;end
             pr = phasor(p1.*p2);
         end
         
         function pr = mtimes(p1,p2)
             % *
 			warning('如果您在计算功率，请确保电流已共轭')
-            if Phasor.isphasor(p1),p1 = p1.pm;end
-            if Phasor.isphasor(p2),p2 = p2.pm;end
+            if phasor.isphasor(p1),p1 = p1.pm;end
+            if phasor.isphasor(p2),p2 = p2.pm;end
             pr = phasor(p1*p2);
         end
         
         function pr = rdivide(p1,p2)
             % ./
-            if Phasor.isphasor(p1),p1 = p1.pm;end
-            if Phasor.isphasor(p2),p2 = p2.pm;end
+            if phasor.isphasor(p1),p1 = p1.pm;end
+            if phasor.isphasor(p2),p2 = p2.pm;end
             pr = phasor(p1./p2);
         end
         
         function pr = mrdivide(p1,p2)
             % /
-            if Phasor.isphasor(p1),p1 = p1.pm;end
-            if Phasor.isphasor(p2),p2 = p2.pm;end
+            if phasor.isphasor(p1),p1 = p1.pm;end
+            if phasor.isphasor(p2),p2 = p2.pm;end
             pr = phasor(p1/p2);
         end
         
         function pr = mldivide(p1,p2)
             % \
-            if Phasor.isphasor(p1),p1 = p1.pm;end
-            if Phasor.isphasor(p2),p2 = p2.pm;end
+            if phasor.isphasor(p1),p1 = p1.pm;end
+            if phasor.isphasor(p2),p2 = p2.pm;end
             pr = phasor(p1\p2);
         end
         
         function pr = ldivide(p1,p2)
             % .\
-            if Phasor.isphasor(p1),p1 = p1.pm;end
-            if Phasor.isphasor(p2),p2 = p2.pm;end
+            if phasor.isphasor(p1),p1 = p1.pm;end
+            if phasor.isphasor(p2),p2 = p2.pm;end
             pr = phasor(p1.\p2);
         end
         
@@ -218,14 +218,14 @@ classdef Phasor
         % 考虑新定义运算符号。
 %         function pr = or(p1,p2)
 %             % parallel: p1|p2
-%             if Phasor.isphasor(p1),p1 = p1.pm;end
-%             if Phasor.isphasor(p2),p2 = p2.pm;end
+%             if phasor.isphasor(p1),p1 = p1.pm;end
+%             if phasor.isphasor(p2),p2 = p2.pm;end
 %             pr = phasor( 1./(1./p1+1./p2) );
 %         end
         function pr = sh(p1,p2)
             % shunt: sh(p1,p2)
-            if Phasor.isphasor(p1),p1 = p1.pm;end
-            if Phasor.isphasor(p2),p2 = p2.pm;end
+            if phasor.isphasor(p1),p1 = p1.pm;end
+            if phasor.isphasor(p2),p2 = p2.pm;end
             pr = phasor( 1./(1./p1+1./p2) );
         end
         
