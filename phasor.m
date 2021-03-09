@@ -21,6 +21,8 @@
 %   提高多个方法的矩阵兼容性
 %   优化注释
 
+% 2021年3月9日
+%   \;的兼容太差了，为了兼容性，不要这个空格了也无妨
 
 classdef phasor
     properties
@@ -251,12 +253,8 @@ classdef phasor
         function pr = sh(varargin)
             % shunt: pr = p1.sh(p2,p3)
             sum = 0;
-            for p1 = [varargin{:}]
-                if phasor.isphasor(p1)
-                    sum = sum + 1./p1.cm;
-                else
-                    sum = sum + 1./p1;
-                end
+            for p1 = varargin
+                sum = sum + 1./p1{1};
             end
             pr = phasor( 1./sum );
         end
@@ -271,7 +269,8 @@ classdef phasor
             if nargin == 2
                 % 矩阵兼容性：p可以为矩阵，但u只能为一个字符。
                 %   不支持为矩阵形p中不同元素指定不同单位
-                u = ['\;{\rm{',u,'}}'];
+%                 u = ['\;{\rm{',u,'}}'];
+                u = ['\rm{',u,'}'];  % \;的兼容太差了
             else
                 u = '';
             end
@@ -301,7 +300,7 @@ classdef phasor
         % 根据(有效值)相量输出正弦表达式，可选是否latex格式
         % 注意！需要特别小心要处理的对象是否是有效值相量！
         function e = sine(self,w,unit,islatex)
-			warning('请注意确认要处理的对象是否是效值相量')
+			warning('请注意确认要处理的对象是否是有效值相量')
             % p.sine(314,'V')
             % w double 频率（缺省为1）,size(w)==size(self)
             % u char 单位（缺省为空）
@@ -352,7 +351,8 @@ classdef phasor
                 cos_parenthesis = '\cos\left(';
                 if ~isempty(unit)
                     % MathType会自动为\circ添加上标记号
-                    unit = ['\circ \right)\; {\rm{',unit,'}}'];
+%                     unit = ['\circ \right)\; {\rm{',unit,'}}'];
+                    unit = ['\circ \right)\rm{',unit,'}'];  % \;的兼容太差了
                 else
                     unit = ['\circ \right)'];%#ok
                 end
@@ -420,7 +420,7 @@ classdef phasor
         
         % 将相量转化为指定频率的时域函数
         % 2020年12月8日 开发中
-        function f = sin_fun(self,w)
+        function f = sin_func(self,w)
             if nargin == 1
                 % 默认频率为w=1
                 w = 1;
@@ -428,7 +428,7 @@ classdef phasor
             if numel(self) ~= numel(w) && numel(w)>1
                 error('输入的频率与相量规模不匹配！')
             end
-            warning('请注意确认要处理的对象是否是效值相量')
+            warning('请注意确认要处理的对象是否是有效值相量')
             % A cos( w t + phi )
             A = self.mm*sqrt(2);
             phi = self.ar();
@@ -448,6 +448,16 @@ classdef phasor
             e = sine(self,w,u,islatex);
         end
         
+    end % of methods
+    %% >> 向量图
+    methods
+        % 绘制向量图
+        function fh = pplot(self)
+            fh = compass([self.xm].',[self.ym].');
+            for i=1:numel(self)
+                text(self(i).x, self(i).y, ['p',num2str(i)]);
+            end
+        end
     end % of methods
     
     %% >> angle stuff
