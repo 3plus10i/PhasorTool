@@ -181,7 +181,7 @@ platex方法兼容 _phasor_ 矩阵输入，输出将为元胞数组。
 
 > 由于Mathtype对LaTex解析的一些小“特性”，sine/slatex方法生成的LaTex表达式虽然适用于Mathtype，但却可能在其他编译器(例如MATLAB自带的interpreter)下显示异常。
 
-sine方法兼容 _phasor_ 矩阵。
+slatex方法兼容 _phasor_ 矩阵。
 
 ## 7. 相量图
 
