@@ -2,7 +2,7 @@
 基于MATLAB的轻量化相量计算和显示工具。方便电路学习者和研究者进行快速计算和纸面作业。想到即可写，写出即可得。
 
 # 简介
-## 1. 下载与安装
+## 1. 开始使用
 下载phasor.m并将其添加到MATLAB路径即可。
 
 同时下载和添加p.m将便于使用，但对功能没有影响。
@@ -196,3 +196,9 @@ pplot方法兼容 _phasor_ 矩阵。
 
 # 实例
 见 [demo.m](./demo.m)
+
+![demo_output](demo_output.jpg)
+
+![demo_figure1](demo_figure1.jpg)
+
+![demo_figure2](demo_figure2.jpg)
